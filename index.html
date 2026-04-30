@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Training Sandbox: Final Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen p-4">
+    <div class="flex gap-4 h-full max-w-6xl mx-auto">
+        <div class="w-1/3 bg-white p-4 rounded shadow flex flex-col">
+            <h2 class="font-bold mb-2">Customers</h2>
+            <input type="text" id="searchInput" oninput="renderList()" placeholder="Search company..." 
+                   class="w-full p-2 border rounded mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+            
+            <h3 class="text-xs font-semibold text-gray-500 mb-2 uppercase">Filters</h3>
+            <div id="filters" class="mb-4 space-y-1 text-sm text-gray-700"></div>
+            <div id="companyList" class="overflow-y-auto flex-1 border-t pt-2"></div>
+        </div>
+
+        <div class="w-2/3 bg-white p-6 rounded shadow flex flex-col" id="detailsArea">
+            <h2 id="companyName" class="text-2xl font-bold mb-4">Выберите компанию</h2>
+            <div id="tabs" class="flex border-b mb-4 space-x-4">
+                <button onclick="showTab('general')" class="tab-btn py-2 border-b-2 border-transparent hover:border-blue-500">General</button>
+                <button onclick="showTab('users')" class="tab-btn py-2 border-b-2 border-transparent hover:border-blue-500">Users</button>
+                <button onclick="showTab('drivers')" class="tab-btn py-2 border-b-2 border-transparent hover:border-blue-500">Drivers</button>
+                <button onclick="showTab('trucks')" class="tab-btn py-2 border-b-2 border-transparent hover:border-blue-500">Trucks</button>
+            </div>
+            <div id="tabContent" class="text-gray-700 min-h-[200px]">
+                <p>Введите название компании в поиске, чтобы начать работу.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const companies = [
+            { 
+                id: 1, name: "Coach Trucking", markers: ["OTH", "Safety Service"],
+                content: { 
+                    users: [{ name: "Coach Fleet 1", info: "f1@coach.com" }, { name: "Coach Fleet 2", info: "f2@coach.com" }],
+                    drivers: [{ name: "Coach Driver 1", info: "Pin: 1111" }, { name: "Coach Driver 2", info: "Pin: 2222" }],
+                    trucks: [{ name: "Coach Truck 1", info: "Plate: C111" }, { name: "Coach Truck 2", info: "Plate: C222" }],
+                    generalInfo: { "Address": "Coach 222", "Country": "Ukraine", "Region": "Mykolayiv", "City": "Mykolayiv", "Postal Code": "54003", "MC Number": "-", "Home Terminal Time Zone": "US/Eastern", "USDOT": "222222", "Active Drivers": "2", "Active Trucks": "2", "Email": "coach@in.com", "Status": "Active" }
+                } 
+            },
+            { 
+                id: 2, name: "Students Group", markers: ["Fleet Editor", "Safety Service"],
+                content: { 
+                    users: [{ name: "Student Fleet 1", info: "s1@st.com" }, { name: "Student Fleet 2", info: "s2@st.com" }],
+                    drivers: [{ name: "Student Driver 1", info: "Pin: 3333" }, { name: "Student Driver 2", info: "Pin: 4444" }],
+                    trucks: [{ name: "Student Truck 1", info: "Plate: S333" }, { name: "Student Truck 2", info: "Plate: S444" }],
+                    generalInfo: { "Address": "Student 333", "Country": "Ukraine", "Region": "Mykolayiv", "City": "Mykolayiv", "Postal Code": "54003", "MC Number": "-", "Home Terminal Time Zone": "US/Eastern", "USDOT": "333333", "Active Drivers": "2", "Active Trucks": "2", "Email": "student@in.com", "Status": "Active" }
+                } 
+            },
+            { 
+                id: 3, name: "Company Issue", markers: ["Debitor", "Violator"],
+                content: { 
+                    users: [{ name: "Debitor Fleet 1", info: "d1@issue.com" }, { name: "Debitor Fleet 2", info: "d2@issue.com" }],
+                    drivers: [{ name: "Violator Driver 1", info: "Pin: 5555" }, { name: "Violator Driver 2", info: "Pin: 6666" }],
+                    trucks: [{ name: "Violator Truck 1", info: "Plate: V555" }, { name: "Violator Truck 2", info: "Plate: V666" }],
+                    generalInfo: { "Address": "Violator 333", "Country": "Ukraine", "Region": "Mykolayiv", "City": "Mykolayiv", "Postal Code": "54003", "MC Number": "-", "Home Terminal Time Zone": "US/Eastern", "USDOT": "444444", "Active Drivers": "2", "Active Trucks": "2", "Email": "violator@in.com", "Status": "Active" }
+                } 
+            },
+            { 
+                id: 4, name: "Global Logistics", markers: ["Priority", "Audit"],
+                content: { 
+                    users: [{ name: "Global Mgr 1", info: "g1@global.com" }],
+                    drivers: [{ name: "Global Drv 1", info: "Pin: 7777" }],
+                    trucks: [{ name: "Global Trk 1", info: "Plate: G777" }],
+                    generalInfo: { "Address": "Global 444", "Country": "Ukraine", "Region": "Mykolayiv", "City": "Mykolayiv", "Postal Code": "54003", "MC Number": "-", "Home Terminal Time Zone": "US/Eastern", "USDOT": "777777", "Active Drivers": "2", "Active Trucks": "2", "Email": "global@in.com", "Status": "Active" }
+                } 
+            },
+            { 
+                id: 5, name: "West Coast Hauling", markers: ["PSS", "PMS"],
+                content: { 
+                    users: [{ name: "West Fleet 1", info: "w1@west.com" }],
+                    drivers: [{ name: "West Drv 1", info: "Pin: 8888" }],
+                    trucks: [{ name: "West Trk 1", info: "Plate: W888" }],
+                    generalInfo: { "Address": "West 555", "Country": "Ukraine", "Region": "Mykolayiv", "City": "Mykolayiv", "Postal Code": "54003", "MC Number": "-", "Home Terminal Time Zone": "US/Eastern", "USDOT": "888888", "Active Drivers": "2", "Active Trucks": "2", "Email": "west@in.com", "Status": "Inactive" }
+                } 
+            }
+        ];
+
+        const markerStyles = {
+            "Debitor": "bg-red-100 text-red-700 border-red-300",
+            "OTH": "bg-orange-100 text-orange-700 border-orange-300",
+            "Priority": "bg-green-100 text-green-700 border-green-300",
+            "Violator": "bg-gray-900 text-white border-gray-900",
+            "Safety Service": "bg-yellow-100 text-yellow-700 border-yellow-300",
+            "Fleet Editor": "bg-blue-100 text-blue-700 border-blue-300",
+            "PSS": "bg-indigo-100 text-indigo-700 border-indigo-300",
+            "Audit": "bg-red-100 text-red-700 border-red-300",
+            "PMS": "bg-teal-100 text-teal-700 border-teal-300"
+        };
+
+        let activeFilters = [];
+        let currentCompany = null;
+        let activeTab = 'general';
+
+        function renderList() {
+            const list = document.getElementById('companyList');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filtered = companies.filter(c => {
+                const matchesSearch = c.name.toLowerCase().includes(searchTerm);
+                const matchesFilters = activeFilters.length === 0 || c.markers.some(m => activeFilters.includes(m));
+                return matchesSearch && matchesFilters;
+            });
+
+            if (searchTerm === "" && activeFilters.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-sm p-4 text-center">Start searching...</p>';
+                return;
+            }
+
+            list.innerHTML = '';
+            filtered.forEach(c => {
+                const div = document.createElement('div');
+                div.className = "p-3 border-b cursor-pointer hover:bg-gray-50 transition";
+                div.innerHTML = `
+                    <div class="font-medium">${c.name}</div>
+                    <div class="flex gap-2 mt-1 flex-wrap">
+                        ${c.markers.map(m => `
+                            <span class="text-[10px] px-2 py-0.5 rounded border font-bold flex items-center gap-1 ${markerStyles[m] || 'bg-gray-100'}">
+                                <span>!</span> ${m}
+                            </span>`).join('')}
+                    </div>
+                `;
+                div.onclick = () => selectCompany(c);
+                list.appendChild(div);
+            });
+        }
+
+        function selectCompany(c) {
+            currentCompany = c;
+            document.getElementById('companyName').innerText = c.name;
+            showTab(activeTab);
+        }
+
+        function showTab(tab) {
+            activeTab = tab;
+            if (!currentCompany) return;
+            const contentArea = document.getElementById('tabContent');
+            
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('border-blue-600', 'font-bold'));
+            event?.target.classList.add('border-blue-600', 'font-bold');
+
+            if (tab === 'general') {
+                const info = currentCompany.content.generalInfo;
+                let html = '<div class="grid grid-cols-2 gap-4">';
+                for (const [key, value] of Object.entries(info)) {
+                    html += `<div><span class="text-xs text-gray-500">${key}:</span><br>${value}</div>`;
+                }
+                contentArea.innerHTML = html + '</div>';
+            } else {
+                contentArea.innerHTML = `
+                    <input type="text" id="subSearch" oninput="renderTableBody('${tab}')" placeholder="Search ${tab}..." 
+                           class="w-full p-2 mb-4 border rounded text-sm">
+                    <table class="w-full text-left text-sm">
+                        <thead><tr class="border-b text-gray-400"><th class="py-2">Name</th><th class="py-2">Details</th><th class="py-2">Actions</th></tr></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                `;
+                renderTableBody(tab);
+            }
+        }
+
+        function renderTableBody(tab) {
+            const tbody = document.getElementById('tableBody');
+            const term = document.getElementById('subSearch')?.value.toLowerCase() || '';
+            const items = currentCompany.content[tab].filter(i => i.name.toLowerCase().includes(term));
+            
+            tbody.innerHTML = items.map((item, index) => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="py-3">${item.name}</td>
+                    <td class="py-3 text-gray-500">${item.info}</td>
+                    <td class="py-3 relative">
+                        <button onclick="toggleActionMenu(${index})" class="bg-blue-900 text-white px-3 py-1 rounded text-xs hover:bg-blue-800">Actions ▼</button>
+                        <div id="menu-${index}" class="hidden absolute right-0 mt-2 w-32 bg-white border rounded shadow-lg z-10">
+                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">✏️ Update</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function toggleActionMenu(index) {
+            document.getElementById(`menu-${index}`).classList.toggle('hidden');
+        }
+
+        const allMarkers = ["Debitor", "OTH", "Priority", "Violator", "Safety Service", "Fleet Editor", "PSS", "Audit", "PMS"];
+        const filtersDiv = document.getElementById('filters');
+        allMarkers.forEach(m => {
+            filtersDiv.innerHTML += `<div class="cursor-pointer hover:text-blue-600 flex items-center gap-2 text-sm">
+                <input type="checkbox" onchange="toggleFilter('${m}')"> ${m}
+            </div>`;
+        });
+
+        function toggleFilter(m) {
+            if (activeFilters.includes(m)) activeFilters = activeFilters.filter(f => f !== m);
+            else activeFilters.push(m);
+            renderList();
+        }
+    </script>
+</body>
+</html>
